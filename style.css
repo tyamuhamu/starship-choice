@@ -1,0 +1,394 @@
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: Arial, "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
+    background: #f5f5f5;
+    color: #333;
+}
+
+header {
+    text-align: center;
+    background: #222;
+    color: white;
+    padding: 25px 15px;
+}
+
+header h1 {
+    margin: 0 0 10px;
+    font-size: 30px;
+}
+
+header p {
+    margin: 0;
+    font-size: 16px;
+}
+
+/* 説明 */
+.instruction {
+    text-align: center;
+    padding: 20px;
+}
+
+.instruction p {
+    font-size: 20px;
+    font-weight: bold;
+}
+
+/* カードを並べる場所 */
+.card-container {
+    width: 90%;
+    max-width: 1200px;
+    margin: 0 auto 30px;
+
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 20px;
+}
+
+/* アイドルカード */
+.idol-card {
+    background: white;
+    border-radius: 15px;
+    overflow: hidden;
+
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+
+    cursor: pointer;
+
+    transition:
+        transform 0.2s,
+        box-shadow 0.2s,
+        border 0.2s;
+
+    border: 4px solid transparent;
+}
+
+.idol-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+}
+
+/* 選択されたカード */
+.idol-card.selected {
+    border: 4px solid #ff4f81;
+    transform: translateY(-8px);
+    box-shadow: 0 10px 25px rgba(255, 79, 129, 0.4);
+}
+
+/* アイドル画像 */
+.idol-card img {
+    width: 100%;
+    height: 230px;
+    object-fit: cover;
+    display: block;
+}
+
+/* 名前・グループ */
+.idol-info {
+    padding: 15px;
+    text-align: center;
+}
+
+.idol-name {
+    margin: 0 0 8px;
+    font-size: 20px;
+    font-weight: bold;
+}
+
+.group-name {
+    margin: 0;
+    font-size: 14px;
+    color: #777;
+}
+
+/* 決定ボタン */
+.confirm-button,
+.restart-button {
+    display: block;
+
+    margin: 20px auto 50px;
+
+    padding: 15px 40px;
+
+    border: none;
+    border-radius: 30px;
+
+    background: #ff4f81;
+    color: white;
+
+    font-size: 18px;
+    font-weight: bold;
+
+    cursor: pointer;
+
+    transition: 0.2s;
+}
+
+.confirm-button:hover,
+.restart-button:hover {
+    background: #e63e6e;
+    transform: scale(1.05);
+}
+
+/* 最終結果 */
+.result-section {
+    padding-bottom: 50px;
+}
+
+.result-section h2 {
+    text-align: center;
+    font-size: 28px;
+}
+
+/* 非表示 */
+.hidden {
+    display: none;
+}
+
+/* スマホ対応 */
+@media (max-width: 600px) {
+
+    header h1 {
+        font-size: 24px;
+    }
+
+    .instruction p {
+        font-size: 17px;
+    }
+
+    .card-container {
+        width: 94%;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+    }
+
+    .idol-card img {
+        height: 180px;
+    }
+
+    .idol-name {
+        font-size: 16px;
+    }
+
+    .group-name {
+        font-size: 12px;
+    }
+
+}
+
+/* ==========================================
+   スマホ版
+   ========================================== */
+
+@media (max-width: 600px) {
+
+    body {
+        margin: 0;
+        padding: 10px;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+
+    /* タイトル */
+    h1 {
+        font-size: 24px;
+        margin: 10px 0 15px;
+    }
+
+
+    /* ラウンド表示 */
+    #roundText {
+        font-size: 20px;
+        margin: 10px 0;
+    }
+
+
+    /* 説明文 */
+    #instructionText {
+        font-size: 14px;
+        margin: 8px 5px 15px;
+    }
+
+
+    /* カードをスマホ用にする */
+    #cardContainer {
+        display: grid;
+
+        grid-template-columns:
+            repeat(2, 1fr);
+
+        gap: 10px;
+
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+
+    /* アイドルカード */
+    .idol-card {
+        width: 100%;
+        min-width: 0;
+
+        box-sizing: border-box;
+
+        margin: 0;
+        padding: 6px;
+
+        border-radius: 10px;
+    }
+
+
+    /* アイドル画像 */
+    .idol-card img {
+        width: 100%;
+        height: auto;
+
+        aspect-ratio: 1 / 1;
+
+        object-fit: cover;
+
+        border-radius: 8px;
+    }
+
+
+    /* 名前 */
+    .idol-name {
+        font-size: 14px;
+        margin: 5px 0 2px;
+
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+
+    /* グループ名 */
+    .group-name {
+        font-size: 11px;
+        margin: 0;
+
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+
+    /* 決定ボタン */
+    #confirmButton {
+        width: 90%;
+
+        max-width: 350px;
+
+        padding: 12px 20px;
+
+        font-size: 16px;
+
+        margin: 15px auto;
+    }
+
+
+    /* 最終結果 */
+    #finalContainer {
+        display: grid;
+
+        grid-template-columns:
+            repeat(2, 1fr);
+
+        gap: 10px;
+
+        width: 100%;
+    }
+
+
+    /* やり直すボタン */
+    #restartButton {
+        width: 90%;
+
+        max-width: 350px;
+
+        padding: 12px;
+
+        font-size: 16px;
+    }
+
+}
+
+/* ==========================================
+   保存・シェアボタン
+   ========================================== */
+
+.share-buttons {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    gap: 15px;
+
+    margin: 25px auto 20px;
+
+    flex-wrap: wrap;
+}
+
+
+.share-button {
+    border: none;
+
+    padding: 14px 28px;
+
+    border-radius: 30px;
+
+    font-size: 16px;
+    font-weight: bold;
+
+    cursor: pointer;
+
+    transition: 0.2s;
+
+    color: white;
+}
+
+
+.share-button:hover {
+    transform: scale(1.05);
+}
+
+
+.save-button {
+    background: #555;
+}
+
+
+.x-button {
+    background: #000;
+}
+
+
+/* スマホ */
+@media (max-width: 600px) {
+
+    .share-buttons {
+        width: 100%;
+
+        flex-direction: column;
+
+        gap: 10px;
+
+        margin-top: 20px;
+    }
+
+
+    .share-button {
+        width: 90%;
+
+        max-width: 350px;
+
+        padding: 13px 20px;
+
+        font-size: 15px;
+    }
+
+}
