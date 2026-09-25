@@ -1300,33 +1300,44 @@ function startRevival() {
 
 
     // ==========================================
-    // 必ず9枚を候補として用意
-    // ==========================================
+// 敗者復活カードの枚数を決定
+// ==========================================
+//
+// 基本は9枚表示する。
+// ただし候補が9枚未満でも、
+// 「必要人数」以上あれば敗者復活戦を行う。
+// ==========================================
 
-    const revivalCards =
-        candidates.slice(
-            0,
-            REVIVAL_COUNT
-        );
+const revivalCardCount =
+    Math.min(
+        REVIVAL_COUNT,
+        candidates.length
+    );
 
 
-    // ==========================================
-    // 9枚用意できない場合
-    // ==========================================
+const revivalCards =
+    candidates.slice(
+        0,
+        revivalCardCount
+    );
 
-    if (
-        revivalCards.length <
-        REVIVAL_COUNT
-    ) {
 
-        alert(
-            `敗者復活候補を9枚用意できません。現在${revivalCards.length}枚です。`
-        );
+// ==========================================
+// 必要人数より候補が少ない場合だけエラー
+// ==========================================
 
-        return;
+if (
+    revivalCards.length <
+    needed
+) {
 
-    }
+    alert(
+        `敗者復活に必要なカードが足りません。` +
+        `必要：${needed}枚 / 現在：${revivalCards.length}枚`
+    );
 
+    return;
+}
 
     // ==========================================
     // 敗者復活戦を表示
@@ -1344,8 +1355,7 @@ function startRevival() {
         "敗者復活戦";
 
     instructionText.textContent =
-        `敗者復活候補9人の中から${needed}人を選んでください`;
-
+    `${revivalCards.length}人の中から${needed}人を選んでください`;
 
     displayCards();
 
