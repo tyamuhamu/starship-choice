@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>STARSHIP🚀好き顔9選</title>
+
     <link rel="stylesheet" href="style.css">
 </head>
 
@@ -23,49 +25,60 @@
             </p>
         </section>
 
+
         <!-- アイドルカードを表示する場所 -->
-        <section id="cardContainer" class="card-container">
+        <section
+            id="cardContainer"
+            class="card-container">
         </section>
 
+
         <!-- 選択確定ボタン -->
-        <button id="confirmButton" class="confirm-button">
+        <button
+            id="confirmButton"
+            class="confirm-button">
             このメンバーで決定
         </button>
 
-        <!-- 結果表示 -->
-        <section id="resultSection" class="result-section hidden">
 
-    <h2>最終選抜メンバー</h2>
+        <!-- 最終結果 -->
+        <section
+            id="resultSection"
+            class="result-section hidden">
 
-    <div id="finalContainer" class="card-container">
-    </div>
-
-
-    <!-- 保存・Xシェア用ボタン -->
-    <div class="share-buttons">
-
-        <button
-            id="saveImageButton"
-            class="share-button save-button">
-            9人の画像を保存
-        </button>
-
-        <button
-            id="shareXButton"
-            class="share-button x-button">
-            Xでシェア
-        </button>
-
-    </div>
+            <h2>最終選抜メンバー</h2>
 
 
-    <button id="restartButton" class="restart-button">
-        もう一度やる
-    </button>
+            <!-- 最終9人を表示 -->
+            <div
+                id="finalContainer"
+                class="card-container">
+            </div>
 
-</section>
+
+            <!-- 共有 -->
+            <div class="share-buttons">
+
+                <button
+                    id="shareXButton"
+                    class="share-button x-button">
+                    共有
+                </button>
+
+            </div>
+
+
+            <!-- 最初からやり直す -->
+            <button
+                id="restartButton"
+                class="restart-button">
+                もう一度やる
+            </button>
+
+        </section>
 
     </main>
+
 
     <script src="script.js"></script>
 

@@ -413,6 +413,8 @@ const idols = [
 
 
 
+
+
 // ==================================================
 // 設定
 // ==================================================
@@ -422,6 +424,7 @@ const GROUP_SIZE = 8;
 const SELECT_COUNT = 5;
 const FINAL_COUNT = 9;
 const REVIVAL_COUNT = 9;
+
 
 
 // ==================================================
@@ -445,12 +448,15 @@ let selectedCards = [];
 // 現在のラウンドで脱落したカード
 let currentRoundLosers = [];
 
-// 直前のラウンドで脱落したカード
-let previousRoundLosers = [];
+// 敗者復活候補
+//
+// 第2回戦以降では、
+// 「直近で脱落した人」を先頭にする。
 let revivalCandidates = [];
 
 // 第1回戦のグループ番号
 let firstGroupNumber = 0;
+
 
 
 // ==================================================
@@ -477,28 +483,18 @@ const finalContainer =
 
 const restartButton =
     document.getElementById("restartButton");
-    const saveImageButton =
-    document.getElementById("saveImageButton");
 
 const shareXButton =
     document.getElementById("shareXButton");
 
-
-// ==================================================
-// シャッフル
-// ==================================================
 
 
 // ==================================================
 // 重複カードを削除
 // ==================================================
 //
-// image（画像ファイル名）を
-// そのアイドルを識別するものとして使います。
-//
-// 同じ画像ファイルのカードが2枚以上あった場合、
-// 最初の1枚だけ残して、それ以降は削除します。
-//
+// imageをアイドルの識別子として使用。
+// 同じ画像ファイルを持つカードは1枚だけ残す。
 // ==================================================
 
 function removeDuplicates(array) {
@@ -507,10 +503,12 @@ function removeDuplicates(array) {
 
     return array.filter(idol => {
 
-        if (seen.has(idol.image)) {
-
+        if (!idol || !idol.image) {
             return false;
+        }
 
+        if (seen.has(idol.image)) {
+            return false;
         }
 
         seen.add(idol.image);
@@ -520,6 +518,21 @@ function removeDuplicates(array) {
     });
 
 }
+
+
+
+// ==================================================
+// ゲームで使用するカード
+// ==================================================
+//
+// 最初から重複を除いておく。
+// これにより、第1回戦から同じカードが
+// 同時に2枚表示されることを防ぐ。
+// ==================================================
+
+const uniqueIdols =
+    removeDuplicates(idols);
+
 
 
 // ==================================================
@@ -551,36 +564,6 @@ function shuffle(array) {
 }
 
 
-// ==================================================
-// ゲーム開始
-// ==================================================
-
-function startGame(revivalCandidates = []) {
-
-    roundNumber = 1;
-
-    O = [];
-
-    roundPool = [];
-
-    currentBattle = [];
-
-    selectedCards = [];
-
-    currentRoundLosers = [];
-
-    previousRoundLosers = [];
-
-    firstGroupNumber = 0;
-
-    resultSection.classList.add("hidden");
-
-    confirmButton.style.display = "block";
-
-    startFirstRound();
-
-}
-
 
 // ==================================================
 // ゲーム開始
@@ -600,7 +583,7 @@ function startGame() {
 
     currentRoundLosers = [];
 
-    previousRoundLosers = [];
+    revivalCandidates = [];
 
     firstGroupNumber = 0;
 
@@ -609,7 +592,9 @@ function startGame() {
     confirmButton.style.display = "block";
 
     startFirstRound();
+
 }
+
 
 
 // ==================================================
@@ -624,19 +609,34 @@ function startFirstRound() {
     const end =
         start + FIRST_GROUP_SIZE;
 
+    // 重複を除いたカードから8枚
     currentBattle =
-        idols.slice(start, end);
+        removeDuplicates(
+            uniqueIdols.slice(start, end)
+        );
 
     selectedCards = [];
 
+
+    // 第1回戦の総組数
+    const totalGroups =
+        Math.ceil(
+            uniqueIdols.length /
+            FIRST_GROUP_SIZE
+        );
+
+
     roundText.textContent =
-        `第1回戦　${firstGroupNumber + 1}組目 / 8組`;
+        `第1回戦　${firstGroupNumber + 1}組目 / ${totalGroups}組`;
 
     instructionText.textContent =
         "この8人の中から、好きな人数を選んでください";
 
+
     displayCards();
+
 }
+
 
 
 // ==================================================
@@ -647,6 +647,12 @@ function displayCards() {
 
     cardContainer.innerHTML = "";
 
+
+    // 念のため表示前にも重複を除去
+    currentBattle =
+        removeDuplicates(currentBattle);
+
+
     currentBattle.forEach(idol => {
 
         const card =
@@ -655,7 +661,9 @@ function displayCards() {
         cardContainer.appendChild(card);
 
     });
+
 }
+
 
 
 // ==================================================
@@ -669,33 +677,65 @@ function createCard(idol) {
 
     card.classList.add("idol-card");
 
-    card.innerHTML = `
-        <img
-            src="images/${idol.image}"
-            alt="${idol.name}"
-        >
 
-        <div class="idol-info">
+    const img =
+        document.createElement("img");
 
-            <p class="idol-name">
-                ${idol.name}
-            </p>
+    img.src =
+        `images/${idol.image}`;
 
-            <p class="group-name">
-                ${idol.group}
-            </p>
+    img.alt =
+        idol.name;
 
-        </div>
-    `;
 
-    card.addEventListener("click", () => {
+    const info =
+        document.createElement("div");
 
-        toggleSelection(idol, card);
+    info.classList.add("idol-info");
 
-    });
+
+    const name =
+        document.createElement("p");
+
+    name.classList.add("idol-name");
+
+    name.textContent =
+        idol.name;
+
+
+    const group =
+        document.createElement("p");
+
+    group.classList.add("group-name");
+
+    group.textContent =
+        idol.group;
+
+
+    info.appendChild(name);
+    info.appendChild(group);
+
+    card.appendChild(img);
+    card.appendChild(info);
+
+
+    card.addEventListener(
+        "click",
+        () => {
+
+            toggleSelection(
+                idol,
+                card
+            );
+
+        }
+    );
+
 
     return card;
+
 }
+
 
 
 // ==================================================
@@ -708,86 +748,136 @@ function toggleSelection(idol, card) {
         selectedCards.indexOf(idol);
 
 
+    // ------------------------------------------
     // 選択解除
+    // ------------------------------------------
+
     if (index !== -1) {
 
-        selectedCards.splice(index, 1);
+        selectedCards.splice(
+            index,
+            1
+        );
 
-        card.classList.remove("selected");
+        card.classList.remove(
+            "selected"
+        );
 
         return;
+
     }
 
 
-    // 第1回戦は好きな人数
+    // ------------------------------------------
+    // 第1回戦
+    // ------------------------------------------
+
     if (roundNumber === 1) {
 
         selectedCards.push(idol);
 
-        card.classList.add("selected");
+        card.classList.add(
+            "selected"
+        );
 
         return;
+
     }
 
 
-    // 第2回戦以降は5人まで
-    if (selectedCards.length >= SELECT_COUNT) {
+    // ------------------------------------------
+    // 第2回戦以降
+    // ------------------------------------------
 
-        alert("5人まで選択できます。");
+    if (
+        selectedCards.length >=
+        SELECT_COUNT
+    ) {
+
+        alert(
+            "5人まで選択できます。"
+        );
 
         return;
+
     }
 
 
     selectedCards.push(idol);
 
-    card.classList.add("selected");
+    card.classList.add(
+        "selected"
+    );
+
 }
+
 
 
 // ==================================================
 // 「このメンバーで決定」
 // ==================================================
 
-confirmButton.addEventListener("click", function () {
+confirmButton.addEventListener(
+    "click",
+    function () {
 
-    // ------------------------------------------
-    // 敗者復活戦
-    // ------------------------------------------
+        // ------------------------------------------
+        // 敗者復活戦
+        // ------------------------------------------
 
-    if (roundText.textContent === "敗者復活戦") {
+        if (
+            roundText.textContent ===
+            "敗者復活戦"
+        ) {
 
-        confirmRevival();
+            confirmRevival();
 
-        return;
+            return;
+
+        }
+
+
+        // ------------------------------------------
+        // 通常の選抜
+        // ------------------------------------------
+
+        if (
+            selectedCards.length === 0
+        ) {
+
+            alert(
+                "少なくとも1人選んでください。"
+            );
+
+            return;
+
+        }
+
+
+        // ------------------------------------------
+        // 第1回戦
+        // ------------------------------------------
+
+        if (
+            roundNumber === 1
+        ) {
+
+            confirmFirstRound();
+
+            return;
+
+        }
+
+
+        // ------------------------------------------
+        // 第2回戦以降
+        // ------------------------------------------
+
+        confirmNormalBattle();
+
     }
+);
 
-
-    // ------------------------------------------
-    // 通常の選抜
-    // ------------------------------------------
-
-    if (selectedCards.length === 0) {
-
-        alert("少なくとも1人選んでください。");
-
-        return;
-    }
-
-
-    // 第1回戦
-    if (roundNumber === 1) {
-
-        confirmFirstRound();
-
-        return;
-    }
-
-
-    // 第2回戦以降
-    confirmNormalBattle();
-
-});
 
 
 // ==================================================
@@ -805,72 +895,97 @@ function confirmFirstRound() {
 
 
     // 選ばれた人をOへ
-    O.push(...selectedCards);
+    O.push(
+        ...selectedCards
+    );
 
 
-    // 第1回戦の落選者は
-    // 敗者復活候補にはしない
+    // 念のためO自体も重複除去
+    O =
+        removeDuplicates(O);
 
+
+    // ------------------------------------------
+    // 次の8人へ
+    // ------------------------------------------
 
     firstGroupNumber++;
 
 
-    // 次の8人
-    if (firstGroupNumber < 8) {
+    const totalGroups =
+        Math.ceil(
+            uniqueIdols.length /
+            FIRST_GROUP_SIZE
+        );
+
+
+    if (
+        firstGroupNumber <
+        totalGroups
+    ) {
 
         startFirstRound();
 
         return;
+
     }
 
 
-// ------------------------------------------
-// 第1回戦終了
-// ------------------------------------------
-
-// 9人ちょうど
-if (O.length === FINAL_COUNT) {
-
-    showFinalResult(O);
-
-    return;
-}
+    // ==========================================
+    // 第1回戦終了
+    // ==========================================
 
 
-// 8人だけ残った場合
-// → 特例で敗者復活戦
-if (O.length === 8) {
+    // ------------------------------------------
+    // 9人ちょうど
+    // ------------------------------------------
 
-    startRevival();
+    if (
+        O.length ===
+        FINAL_COUNT
+    ) {
 
-    return;
-}
+        showFinalResult(O);
+
+        return;
+
+    }
 
 
-// 9人より多い場合
-// → 第2回戦へ
-if (O.length > FINAL_COUNT) {
+    // ------------------------------------------
+    // 9人未満
+    // ------------------------------------------
+    //
+    // 第1回戦だけは、
+    // 8人だった場合も敗者復活を行う。
+    //
+    // また、8人未満でも9人未満なので
+    // 敗者復活を行う。
+    // ------------------------------------------
+
+    if (
+        O.length <
+        FINAL_COUNT
+    ) {
+
+        startRevival();
+
+        return;
+
+    }
+
+
+    // ------------------------------------------
+    // 9人より多い
+    // → 第2回戦
+    // ------------------------------------------
 
     roundNumber = 2;
 
     startNormalRound();
 
-    return;
 }
 
-
-// 8人未満の場合
-// → 現在のルールでは終了
-showFinalResult(O);
-
-return;
-
-
-    // 第2回戦へ
-    roundNumber = 2;
-
-    startNormalRound();
-}
 
 
 // ==================================================
@@ -879,20 +994,28 @@ return;
 
 function startNormalRound() {
 
-    // 今回のラウンドのカードを
+    // 現在のOを重複除去
+    O =
+        removeDuplicates(O);
+
+
     // ランダムな順番にする
     roundPool =
         shuffle(O);
 
 
     // Oを空にして、
-    // 選ばれたカードだけ戻していく
+    // 選ばれたカードだけ戻す
     O = [];
+
 
     currentRoundLosers = [];
 
+
     nextNormalBattle();
+
 }
+
 
 
 // ==================================================
@@ -901,13 +1024,20 @@ function startNormalRound() {
 
 function nextNormalBattle() {
 
+    // ------------------------------------------
     // まだカードが残っている
-    if (roundPool.length > 0) {
+    // ------------------------------------------
+
+    if (
+        roundPool.length > 0
+    ) {
 
         currentBattle =
-            roundPool.splice(
-                0,
-                GROUP_SIZE
+            removeDuplicates(
+                roundPool.splice(
+                    0,
+                    GROUP_SIZE
+                )
             );
 
 
@@ -916,22 +1046,32 @@ function nextNormalBattle() {
         // → 不戦勝
         // ------------------------------------------
 
-        if (currentBattle.length <= 5) {
+        if (
+            currentBattle.length <=
+            SELECT_COUNT
+        ) {
 
-            O.push(...currentBattle);
+            O.push(
+                ...currentBattle
+            );
+
+            O =
+                removeDuplicates(O);
 
             nextNormalBattle();
 
             return;
+
         }
 
 
         // ------------------------------------------
-        // 6～7人
+        // 6～8人
         // → 5人選択
         // ------------------------------------------
 
         selectedCards = [];
+
 
         roundText.textContent =
             `第${roundNumber}回戦`;
@@ -939,15 +1079,22 @@ function nextNormalBattle() {
         instructionText.textContent =
             `${currentBattle.length}人の中から5人を選んでください`;
 
+
         displayCards();
 
         return;
+
     }
 
 
+    // ------------------------------------------
     // 全部終わった
+    // ------------------------------------------
+
     finishNormalRound();
+
 }
+
 
 
 // ==================================================
@@ -956,12 +1103,21 @@ function nextNormalBattle() {
 
 function confirmNormalBattle() {
 
-    // 5人選ばれているか
-    if (selectedCards.length !== 5) {
+    // ------------------------------------------
+    // 5人選択
+    // ------------------------------------------
 
-        alert("5人ちょうど選んでください。");
+    if (
+        selectedCards.length !==
+        SELECT_COUNT
+    ) {
+
+        alert(
+            "5人ちょうど選んでください。"
+        );
 
         return;
+
     }
 
 
@@ -974,16 +1130,27 @@ function confirmNormalBattle() {
 
 
     // 選ばれた5人
-    O.push(...selectedCards);
+    O.push(
+        ...selectedCards
+    );
 
 
     // 今回の落選者
-    currentRoundLosers.push(...losers);
+    currentRoundLosers.push(
+        ...losers
+    );
+
+
+    // Oの重複防止
+    O =
+        removeDuplicates(O);
 
 
     // 次のグループ
     nextNormalBattle();
+
 }
+
 
 
 // ==================================================
@@ -992,33 +1159,53 @@ function confirmNormalBattle() {
 
 function finishNormalRound() {
 
-    // 今回のラウンドで落選した人を
-    // 次回の敗者復活候補として保存
-   // 今回のラウンドの落選者を
-// 敗者復活候補に追加
-//
-// 「直近で脱落した人」を先頭にするため、
-// 今回の落選者を逆順で前に追加する
+    // ------------------------------------------
+    // 今回の落選者を
+    // 敗者復活候補の先頭へ追加
+    // ------------------------------------------
+    //
+    // reverse()を使わず、
+    // 元の配列を壊さない。
+    // ------------------------------------------
 
-previousRoundLosers =
-    [...currentRoundLosers];
+    const newestLosers =
+        [
+            ...currentRoundLosers
+        ].reverse();
 
-revivalCandidates =
-    [
-        ...currentRoundLosers.reverse(),
-        ...revivalCandidates
-    ];
+
+    revivalCandidates =
+        [
+            ...newestLosers,
+            ...revivalCandidates
+        ];
+
+
+    // 敗者復活候補自体も重複除去
+    revivalCandidates =
+        removeDuplicates(
+            revivalCandidates
+        );
+
+
+    // Oも重複除去
+    O =
+        removeDuplicates(O);
 
 
     // ------------------------------------------
     // 9人
     // ------------------------------------------
 
-    if (O.length === FINAL_COUNT) {
+    if (
+        O.length ===
+        FINAL_COUNT
+    ) {
 
         showFinalResult(O);
 
         return;
+
     }
 
 
@@ -1027,23 +1214,29 @@ revivalCandidates =
     // → 敗者復活
     // ------------------------------------------
 
-    if (O.length < FINAL_COUNT) {
+    if (
+        O.length <
+        FINAL_COUNT
+    ) {
 
         startRevival();
 
         return;
+
     }
 
 
     // ------------------------------------------
     // 9人より多い
-    // → 敗者復活なし
+    // → 次のラウンド
     // ------------------------------------------
 
     roundNumber++;
 
     startNormalRound();
+
 }
+
 
 
 // ==================================================
@@ -1056,52 +1249,58 @@ function startRevival() {
         FINAL_COUNT - O.length;
 
 
-    let candidates;
+    let candidates = [];
 
 
     // ==========================================
-    // 第1回戦で8人になった場合
+    // 第1回戦終了後
     // ==========================================
     //
-    // 特例として、
-    // 第1回戦で脱落した人を含む
-    // 全脱落者からランダムに9枚選ぶ
+    // 第1回戦で8人しか残らなかった場合など、
+    // 第1回戦の脱落者も候補にする特例。
     //
+    // 「誰でもランダム」でOKというルール。
+    // ==========================================
 
-    if (roundNumber === 1) {
+    if (
+        roundNumber === 1
+    ) {
 
         candidates =
             shuffle(
-                idols.filter(
-                    idol => !O.includes(idol)
+                uniqueIdols.filter(
+                    idol =>
+                        !O.includes(idol)
                 )
             );
 
     }
 
+
     // ==========================================
     // 第2回戦以降
     // ==========================================
     //
-    // 直近のラウンドの落選者を最優先。
-    // 9枚に足りなければ、そのさらに前の
-    // ラウンドの落選者から補充する。
+    // 第1回戦の脱落者は候補にしない。
     //
-    // 第1回戦の落選者はここには入れない。
-    //
+    // 直近で脱落した順に候補を並べる。
+    // ==========================================
 
     else {
 
         candidates =
             removeDuplicates(
                 revivalCandidates
+            ).filter(
+                idol =>
+                    !O.includes(idol)
             );
 
     }
 
 
     // ==========================================
-    // 必ず9枚用意
+    // 必ず9枚を候補として用意
     // ==========================================
 
     const revivalCards =
@@ -1112,7 +1311,7 @@ function startRevival() {
 
 
     // ==========================================
-    // 9枚用意できなかった場合
+    // 9枚用意できない場合
     // ==========================================
 
     if (
@@ -1125,6 +1324,7 @@ function startRevival() {
         );
 
         return;
+
     }
 
 
@@ -1133,7 +1333,9 @@ function startRevival() {
     // ==========================================
 
     currentBattle =
-        revivalCards;
+        removeDuplicates(
+            revivalCards
+        );
 
     selectedCards = [];
 
@@ -1145,19 +1347,11 @@ function startRevival() {
         `敗者復活候補9人の中から${needed}人を選んでください`;
 
 
-    cardContainer.innerHTML = "";
-
-
-    currentBattle.forEach(idol => {
-
-        const card =
-            createCard(idol);
-
-        cardContainer.appendChild(card);
-
-    });
+    displayCards();
 
 }
+
+
 
 // ==================================================
 // 敗者復活の決定
@@ -1169,20 +1363,60 @@ function confirmRevival() {
         FINAL_COUNT - O.length;
 
 
-    if (selectedCards.length !== needed) {
+    if (
+        selectedCards.length !==
+        needed
+    ) {
 
         alert(
             `${needed}人ちょうど選んでください。`
         );
 
         return;
+
     }
 
 
-    O.push(...selectedCards);
+    // 復活
+    O.push(
+        ...selectedCards
+    );
 
-    showFinalResult(O);
+
+    // 重複防止
+    O =
+        removeDuplicates(O);
+
+
+    // ==========================================
+    // 9人になったので終了
+    // ==========================================
+
+    if (
+        O.length ===
+        FINAL_COUNT
+    ) {
+
+        showFinalResult(O);
+
+        return;
+
+    }
+
+
+    // 念のため
+    // 9人にならなかった場合
+    if (
+        O.length <
+        FINAL_COUNT
+    ) {
+
+        startRevival();
+
+    }
+
 }
+
 
 
 // ==================================================
@@ -1191,33 +1425,53 @@ function confirmRevival() {
 
 function showFinalResult(finalMembers) {
 
+    // 最終メンバーも重複除去
+    const uniqueFinalMembers =
+        removeDuplicates(
+            finalMembers
+        );
+
+
     cardContainer.innerHTML = "";
 
-    confirmButton.style.display = "none";
+    confirmButton.style.display =
+        "none";
+
 
     roundText.textContent =
         "最終結果";
 
+
     instructionText.textContent =
         "最終選抜メンバー9人が決定しました！";
+
 
     finalContainer.innerHTML = "";
 
 
-    finalMembers
-        .slice(0, FINAL_COUNT)
+    uniqueFinalMembers
+        .slice(
+            0,
+            FINAL_COUNT
+        )
         .forEach(idol => {
 
             const card =
                 createFinalCard(idol);
 
-            finalContainer.appendChild(card);
+            finalContainer.appendChild(
+                card
+            );
 
         });
 
 
-    resultSection.classList.remove("hidden");
+    resultSection.classList.remove(
+        "hidden"
+    );
+
 }
+
 
 
 // ==================================================
@@ -1229,58 +1483,94 @@ function createFinalCard(idol) {
     const card =
         document.createElement("div");
 
-    card.classList.add("idol-card");
+    card.classList.add(
+        "idol-card"
+    );
 
-    card.innerHTML = `
-        <img
-            src="images/${idol.image}"
-            alt="${idol.name}"
-        >
 
-        <div class="idol-info">
+    const img =
+        document.createElement("img");
 
-            <p class="idol-name">
-                ${idol.name}
-            </p>
+    img.src =
+        `images/${idol.image}`;
 
-            <p class="group-name">
-                ${idol.group}
-            </p>
+    img.alt =
+        idol.name;
 
-        </div>
-    `;
+
+    const info =
+        document.createElement("div");
+
+    info.classList.add(
+        "idol-info"
+    );
+
+
+    const name =
+        document.createElement("p");
+
+    name.classList.add(
+        "idol-name"
+    );
+
+    name.textContent =
+        idol.name;
+
+
+    const group =
+        document.createElement("p");
+
+    group.classList.add(
+        "group-name"
+    );
+
+    group.textContent =
+        idol.group;
+
+
+    info.appendChild(name);
+    info.appendChild(group);
+
+    card.appendChild(img);
+    card.appendChild(info);
+
 
     return card;
+
 }
+
 
 
 // ==================================================
 // やり直す
 // ==================================================
 
-restartButton.addEventListener("click", function () {
+restartButton.addEventListener(
+    "click",
+    function () {
 
-    startGame();
+        startGame();
 
-});
+    }
+);
 
 
-// ==================================================
-// ゲーム開始
-// ==================================================
-
-startGame();
 
 // ==================================================
 // 最終9人の3×3画像を作る
 // ==================================================
 
-async function createFinalImage(finalMembers) {
+async function createFinalImage(
+    finalMembers
+) {
 
     const canvas =
-        document.createElement("canvas");
+        document.createElement(
+            "canvas"
+        );
 
-    // 正方形 1080 × 1080
+
+    // 1080 × 1080
     canvas.width = 1080;
     canvas.height = 1080;
 
@@ -1290,7 +1580,8 @@ async function createFinalImage(finalMembers) {
 
 
     // 背景
-    ctx.fillStyle = "#ffffff";
+    ctx.fillStyle =
+        "#ffffff";
 
     ctx.fillRect(
         0,
@@ -1304,14 +1595,17 @@ async function createFinalImage(finalMembers) {
     const gap = 12;
 
     const cellSize =
-        (1080 - gap * 2) / 3;
+        (
+            1080 -
+            gap * 2
+        ) / 3;
 
 
-    // 9人
+    // 最大9人
     for (
         let i = 0;
         i < finalMembers.length &&
-        i < 9;
+        i < FINAL_COUNT;
         i++
     ) {
 
@@ -1328,6 +1622,7 @@ async function createFinalImage(finalMembers) {
         const row =
             Math.floor(i / 3);
 
+
         const col =
             i % 3;
 
@@ -1336,15 +1631,13 @@ async function createFinalImage(finalMembers) {
             col *
             (cellSize + gap);
 
+
         const y =
             row *
             (cellSize + gap);
 
 
-        // ------------------------------------------
-        // 画像を正方形いっぱいに表示
-        // ------------------------------------------
-
+        // 画像
         drawCoverImage(
             ctx,
             img,
@@ -1356,7 +1649,7 @@ async function createFinalImage(finalMembers) {
 
 
         // ------------------------------------------
-        // 下部に名前・グループ
+        // 名前・グループ用背景
         // ------------------------------------------
 
         const textHeight = 65;
@@ -1364,6 +1657,7 @@ async function createFinalImage(finalMembers) {
 
         ctx.fillStyle =
             "rgba(0, 0, 0, 0.65)";
+
 
         ctx.fillRect(
             x,
@@ -1373,15 +1667,25 @@ async function createFinalImage(finalMembers) {
         );
 
 
+        // ------------------------------------------
         // 名前
-        ctx.fillStyle = "#ffffff";
+        // ------------------------------------------
+
+        ctx.fillStyle =
+            "#ffffff";
+
 
         ctx.font =
             "bold 24px Arial, sans-serif";
 
-        ctx.textAlign = "center";
 
-        ctx.textBaseline = "middle";
+        ctx.textAlign =
+            "center";
+
+
+        ctx.textBaseline =
+            "middle";
+
 
         ctx.fillText(
             idol.name,
@@ -1390,9 +1694,13 @@ async function createFinalImage(finalMembers) {
         );
 
 
+        // ------------------------------------------
         // グループ名
+        // ------------------------------------------
+
         ctx.font =
             "16px Arial, sans-serif";
+
 
         ctx.fillText(
             idol.group,
@@ -1404,7 +1712,9 @@ async function createFinalImage(finalMembers) {
 
 
     return canvas;
+
 }
+
 
 
 // ==================================================
@@ -1413,35 +1723,44 @@ async function createFinalImage(finalMembers) {
 
 function loadImage(src) {
 
-    return new Promise((resolve, reject) => {
+    return new Promise(
+        (resolve, reject) => {
 
-        const img =
-            new Image();
+            const img =
+                new Image();
 
-        img.onload = () => {
 
-            resolve(img);
+            img.onload =
+                () => {
 
-        };
+                    resolve(img);
 
-        img.onerror = () => {
+                };
 
-            reject(
-                new Error(
-                    `画像を読み込めませんでした: ${src}`
-                )
-            );
 
-        };
+            img.onerror =
+                () => {
 
-        img.src = src;
+                    reject(
+                        new Error(
+                            `画像を読み込めませんでした: ${src}`
+                        )
+                    );
 
-    });
+                };
+
+
+            img.src = src;
+
+        }
+    );
+
 }
 
 
+
 // ==================================================
-// 画像を「切り抜いて正方形」にする
+// 画像を正方形に切り抜く
 // ==================================================
 
 function drawCoverImage(
@@ -1454,45 +1773,65 @@ function drawCoverImage(
 ) {
 
     const imageRatio =
-        img.width / img.height;
+        img.width /
+        img.height;
+
 
     const targetRatio =
-        width / height;
+        width /
+        height;
 
 
     let sourceWidth =
         img.width;
 
+
     let sourceHeight =
         img.height;
 
+
     let sourceX = 0;
+
 
     let sourceY = 0;
 
 
-    // 横長画像
-    if (imageRatio > targetRatio) {
+    // 横長
+    if (
+        imageRatio >
+        targetRatio
+    ) {
 
         sourceWidth =
             img.height *
             targetRatio;
 
+
         sourceX =
-            (img.width - sourceWidth) / 2;
+            (
+                img.width -
+                sourceWidth
+            ) / 2;
 
     }
 
 
-    // 縦長画像
-    else if (imageRatio < targetRatio) {
+    // 縦長
+    else if (
+        imageRatio <
+        targetRatio
+    ) {
 
         sourceHeight =
             img.width /
             targetRatio;
 
+
         sourceY =
-            (img.height - sourceHeight) / 2;
+            (
+                img.height -
+                sourceHeight
+            ) / 2;
 
     }
 
@@ -1510,82 +1849,51 @@ function drawCoverImage(
         width,
         height
     );
+
 }
 
 
-// ==================================================
-// PNGとして保存
-// ==================================================
-
-async function saveFinalImage() {
-
-    try {
-
-        const finalMembers =
-            getFinalMembers();
-
-
-        const canvas =
-            await createFinalImage(
-                finalMembers
-            );
-
-
-        const link =
-            document.createElement("a");
-
-
-        link.download =
-            "final-9-members.png";
-
-
-        link.href =
-            canvas.toDataURL("image/png");
-
-
-        link.click();
-
-    }
-
-    catch (error) {
-
-        console.error(error);
-
-        alert(
-            "画像の作成に失敗しました。"
-        );
-
-    }
-}
-
 
 // ==================================================
-// 最終9人を取得
+// 共有
 // ==================================================
-
-function getFinalMembers() {
-
-    return Array.from(
-        finalContainer.querySelectorAll(".idol-card")
-    );
-}
-
-
-// ==================================================
-// Xシェア
+//
+// 「画像保存」専用ボタンは廃止。
+// HTMLの「共有」ボタンからこの処理を呼び出す。
+//
+// 対応しているスマホ:
+// → 画像＋URL＋文章を共有画面へ
+//
+// 対応していない環境:
+// → 画像を保存
+// → Xの投稿画面を開く
 // ==================================================
 
 async function shareToX() {
 
     try {
 
-        // 最終メンバーを
-        // Oから取得
+        // 最終9人
         const finalMembers =
-            O.slice(
-                0,
-                FINAL_COUNT
+            removeDuplicates(O)
+                .slice(
+                    0,
+                    FINAL_COUNT
+                );
+
+
+        if (
+            finalMembers.length !==
+            FINAL_COUNT
+        ) {
+
+            alert(
+                "最終9人が決定していません。"
             );
+
+            return;
+
+        }
 
 
         // 3×3画像を生成
@@ -1597,14 +1905,16 @@ async function shareToX() {
 
         // PNG
         const blob =
-            await new Promise(resolve => {
+            await new Promise(
+                resolve => {
 
-                canvas.toBlob(
-                    resolve,
-                    "image/png"
-                );
+                    canvas.toBlob(
+                        resolve,
+                        "image/png"
+                    );
 
-            });
+                }
+            );
 
 
         if (!blob) {
@@ -1626,17 +1936,17 @@ async function shareToX() {
             );
 
 
-        // 公開したサイトのURL
+        // 公開サイトのURL
         const shareUrl =
             window.location.href;
 
 
         const shareText =
-            "私が選んだ最終9人！";
+            "＃私の好きなスタシ顔９選";
 
 
         // ==========================================
-        // スマホなどの共有機能に対応している場合
+        // スマホなどの共有機能
         // ==========================================
 
         if (
@@ -1664,27 +1974,56 @@ async function shareToX() {
             });
 
             return;
+
         }
 
 
         // ==========================================
-        // ファイル共有に対応していない場合
+        // ファイル共有非対応の場合
         // ==========================================
 
-        // まず画像を保存
+        const downloadUrl =
+            URL.createObjectURL(blob);
+
+
         const link =
             document.createElement("a");
+
+
+        link.href =
+            downloadUrl;
+
 
         link.download =
             "final-9-members.png";
 
-        link.href =
-            URL.createObjectURL(blob);
+
+        document.body.appendChild(
+            link
+        );
+
 
         link.click();
 
 
-        // Xの投稿画面
+        document.body.removeChild(
+            link
+        );
+
+
+        setTimeout(
+            () => {
+
+                URL.revokeObjectURL(
+                    downloadUrl
+                );
+
+            },
+            1000
+        );
+
+
+        // X投稿画面
         const xUrl =
             "https://twitter.com/intent/tweet?text=" +
             encodeURIComponent(
@@ -1712,39 +2051,46 @@ async function shareToX() {
 
         console.error(error);
 
-        // ユーザーが共有画面を閉じた場合など
+
+        // 共有画面を閉じただけなら
+        // エラー表示しない
         if (
             error.name ===
             "AbortError"
         ) {
 
             return;
+
         }
 
 
         alert(
-            "Xへの共有に失敗しました。"
+            "共有に失敗しました。"
         );
 
     }
+
 }
 
 
-// ==================================================
-// 保存ボタン
-// ==================================================
-
-saveImageButton.addEventListener(
-    "click",
-    saveFinalImage
-);
-
 
 // ==================================================
-// Xボタン
+// 「共有」ボタン
 // ==================================================
 
-shareXButton.addEventListener(
-    "click",
-    shareToX
-);
+if (shareXButton) {
+
+    shareXButton.addEventListener(
+        "click",
+        shareToX
+    );
+
+}
+
+
+
+// ==================================================
+// ゲーム開始
+// ==================================================
+
+startGame();
