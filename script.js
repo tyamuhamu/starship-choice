@@ -130,7 +130,7 @@ const idols = [
     {
         image: "hyunseong.jpg",
         name: "ヒョンソン",
-        group: "IDID"
+        group: "BOYFRIEND"
     },
 
     {
